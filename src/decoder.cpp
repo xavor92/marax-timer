@@ -5,10 +5,10 @@
 
 #include "decoder.hpp"
 
-#define DEBUG false
+#define DEBUG true
 #define debug(...) if(DEBUG) { printf(__VA_ARGS__); } else {};
 
-#define INFO false
+#define INFO true
 #define info(...) if(INFO) { printf(__VA_ARGS__); } else {};
 
 Decoder::Decoder()
@@ -31,8 +31,9 @@ void Decoder::swap_buffer() {
     memset(current_buffer_pos, 0, BUFFER_SIZE);
 }
 
-void Decoder::handle_bytes(uint8_t byte)
+bool Decoder::handle_bytes(char byte)
 {
+    bool updated_data = false;
     // write byte into buffer
     *current_buffer_pos = byte;
 
@@ -44,10 +45,13 @@ void Decoder::handle_bytes(uint8_t byte)
         *current_buffer_pos = 0;
         info("Buffer: ");
         info("%s\n", buffer[active_buffer_index]);
-        if (parse_active_buffer()) // assume valid packet
+        if (parse_active_buffer())
         {
             debug("Got a valid packet\n");
-            print_current_data();
+            updated_data = true;
+            if (DEBUG) {
+                print_current_data();
+            }
         } else {
             // This might be just the initial data, so this might be expected
             debug("Got an invalid packet\n");
@@ -64,6 +68,7 @@ void Decoder::handle_bytes(uint8_t byte)
             current_buffer_pos++;
         }
     }
+    return updated_data;
 }
 
 
@@ -91,8 +96,17 @@ bool Decoder::parse_active_buffer()
     bool ret = false;
     char *element_start, *element_end;
     long int value;
-    uint8_t *buffer_ptr = buffer[active_buffer_index];
+    char *buffer_ptr = buffer[active_buffer_index];
     memset(&data, 0, sizeof(data));
+
+    // buffer is expected to be null terminated, but might have trailing cr lf chars.
+    element_end = buffer_ptr + strlen(buffer_ptr) - 1;
+    while( *element_end == '\r' || *element_end == '\n')
+    {
+        info("Removing trailing CR or LF\n");
+        *(element_end) = '\00';
+        element_end--;
+    }
 
     // First char must be either 'C' or 'V', otherwise we discard the packet
     if (buffer_ptr[0] == 'C') {
@@ -105,13 +119,13 @@ bool Decoder::parse_active_buffer()
     debug("Mode: %s, ", data.mode == COFFEE ? "Coffee" : "Steam");
 
     // get and print major and minor version
-    ret = extract_int((char *)buffer_ptr + 1, '.', &element_end, &value);
+    ret = extract_int(buffer_ptr + 1, '.', &element_end, &value);
     if (!ret) {
         printf("Could not extract version\n");
         return false;
     }
     debug("Version: %ld.", value);
-    ret = extract_int((char *)(element_end + 1), ',', &element_end, &value);
+    ret = extract_int((element_end + 1), ',', &element_end, &value);
     if (!ret) {
         printf("Could not extract version\n");
         return false;
@@ -119,7 +133,7 @@ bool Decoder::parse_active_buffer()
     debug("%ld, ", value);
 
     // get and print steam temperature
-    ret = extract_int((char *)(element_end + 1), separator, &element_end, &data.steam_temp);
+    ret = extract_int(element_end + 1, separator, &element_end, &data.steam_temp);
     if (!ret) {
         printf("Could not extract steam temperature\n");
         return false;
@@ -136,7 +150,7 @@ bool Decoder::parse_active_buffer()
     }
 
     // get and print target steam temperature
-    ret = extract_int((char *)(element_end + 1), separator, &element_end, &data.target_steam_temp);
+    ret = extract_int((element_end + 1), separator, &element_end, &data.target_steam_temp);
     if (!ret) {
         debug("Could not extract target steam temperature\n");
         return false;
@@ -144,7 +158,7 @@ bool Decoder::parse_active_buffer()
     debug("Target Steam Temp: %d, ", data.target_steam_temp);
 
     // get and print coffee temperature
-    ret = extract_int((char *)(element_end + 1), separator, &element_end, &data.coffee_temp);
+    ret = extract_int((element_end + 1), separator, &element_end, &data.coffee_temp);
     if (!ret) {
         debug("Could not extract coffee temperature\n");
         return false;
@@ -152,7 +166,7 @@ bool Decoder::parse_active_buffer()
     debug("Coffee Temp: %d, ", data.coffee_temp);
 
     // get and print boost countdown
-    ret = extract_int((char *)(element_end + 1), separator, &element_end, &data.boost_countdown);
+    ret = extract_int(element_end + 1, separator, &element_end, &data.boost_countdown);
     if (!ret) {
         debug("Could not extract boost countdown\n");
         return false;
@@ -160,7 +174,7 @@ bool Decoder::parse_active_buffer()
     debug("Boost Countdown: %d, ", data.boost_countdown);
 
     // get and print heating element on/off
-    ret = extract_int((char *)(element_end + 1), separator, &element_end, &value);
+    ret = extract_int((element_end + 1), separator, &element_end, &value);
     if (!ret) {
         debug("Could not extract heating element on/off\n");
         return false;
@@ -169,7 +183,7 @@ bool Decoder::parse_active_buffer()
     debug("Heating Element: %d, ", data.heating_element_on);
 
     // get and print pump on/off
-    ret = extract_int((char *)(element_end + 1), '\00', &element_end, &value);
+    ret = extract_int((element_end + 1), '\00', &element_end, &value);
     if (!ret) {
         debug("Could not extract pump on/off\n");
         return false;
@@ -195,7 +209,7 @@ void Decoder::print_current_data(void)
 
 void Decoder::dump_active_buffer()
 {
-    uint8_t *buffer_ptr = this->buffer[active_buffer_index];
+    char *buffer_ptr = this->buffer[active_buffer_index];
     printf("Buffer: ");
     for (int i = 0; i < BUFFER_SIZE && buffer_ptr[i] != 0; i++)
     {

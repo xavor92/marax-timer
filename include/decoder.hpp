@@ -39,16 +39,16 @@ class Decoder
 public:
     Decoder();
     ~Decoder() {};
-    void handle_bytes(uint8_t byte);
+    bool handle_bytes(char byte);
+    void print_current_data();
     lelit_data_t data;
 private:
     void dump_active_buffer();
     void swap_buffer();
     bool parse_active_buffer();
     bool extract_int(char *start_ptr, char end_char, char** end_char_ptr, long int *value);
-    void print_current_data();
 
-    uint8_t active_buffer_index;
-    uint8_t *current_buffer_pos;
-    uint8_t buffer[INPUT_BUFFER_COUNT][BUFFER_SIZE];
+    char active_buffer_index;
+    char *current_buffer_pos;
+    char buffer[INPUT_BUFFER_COUNT][BUFFER_SIZE];
 };
