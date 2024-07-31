@@ -3,7 +3,7 @@
 
 #include "decoder.hpp"
 
-#define FILE_BUFFER_SIZE 1024^2
+#define FILE_BUFFER_SIZE 1024 * 1024
 
 int read_file(const char* filename, uint8_t *buffer, size_t buffer_size, int *file_size)
 {
@@ -32,7 +32,7 @@ int main()
     uint8_t * buffer = new unsigned char[FILE_BUFFER_SIZE];
     int file_size = 0;
     printf("Hello World from Decoder!\n");
-    int result = read_file("output_cappu.raw", buffer, FILE_BUFFER_SIZE, &file_size);
+    int result = read_file("working.raw", buffer, FILE_BUFFER_SIZE, &file_size);
 
     printf("Result: %d\n", result);
     printf("File size: %d\n", file_size);
