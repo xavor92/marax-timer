@@ -5,10 +5,10 @@
 
 #include "decoder.hpp"
 
-#define DEBUG true
+#define DEBUG false
 #define debug(...) if(DEBUG) { printf(__VA_ARGS__); } else {};
 
-#define INFO true
+#define INFO false
 #define info(...) if(INFO) { printf(__VA_ARGS__); } else {};
 
 Decoder::Decoder()
@@ -146,7 +146,7 @@ bool Decoder::parse_active_buffer()
         info("Skipping leading O\n");
         element_end++;
     } else {
-        printf("No leading O\n");
+        info("No leading O\n");
     }
 
     // get and print target steam temperature

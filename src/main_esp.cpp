@@ -34,20 +34,27 @@ void setup() {
   gfx->fillScreen(WHITE);
   gfx->setCursor(100, 100);
   gfx->setTextColor(BLACK, WHITE);
-  gfx->println("Start!");
-  
+  gfx->setTextSize(2);
+  gfx->setTextWrap(false);
 }
 
 void print_data_to_display(lelit_data_t *data)
 {
-    gfx->setCursor(100, 0);
-    gfx->printf("      Mode: %s\n", data->mode == COFFEE ? "Coffee" : "Steam");
-    gfx->printf("      Steam Temp: %d\n", data->steam_temp);
-    gfx->printf("      Target Steam Temp: %d\n", data->target_steam_temp);
-    gfx->printf("      Coffee Temp: %d\n", data->coffee_temp);
-    gfx->printf("      Boost Countdown: %d\n", data->boost_countdown);
-    gfx->printf("      Heating Element: %d\n", data->heating_element_on);
-    gfx->printf("      Pump: %d\n", data->pump_on);
+    gfx->setCursor(0, 40);
+    gfx->printf("   Mode: %6s\n", data->mode == COFFEE ? "Coffee" : "Steam");
+    gfx->printf("   Steam:   %3d", data->steam_temp);
+    // Use special functionality to write degree symbol
+    gfx->write(0xF8);
+    gfx->printf("C\n");
+    gfx->printf("   Target:  %3d", data->target_steam_temp);
+    gfx->write(0xF8);
+    gfx->printf("C\n");
+    gfx->printf("   Coffee:  %3d", data->coffee_temp);
+    gfx->write(0xF8);
+    gfx->printf("C\n");
+    gfx->printf("   Boost:   %3ds\n", data->boost_countdown);
+    gfx->printf("   Heating: %3d\n", data->heating_element_on);
+    gfx->printf("   Pump:    %3d\n", data->pump_on);
 }
 
 void loop() {
@@ -69,7 +76,8 @@ void loop() {
   }
 
   if (rc != 0xFF) {
-    // Serial.printf("rc: 0x%02X / %c\n", rc, rc);
+    // forward all bytes to UART for debugging & capturing
+    Serial.print(rc);
     updated = decoder.handle_bytes(rc);
   }
 
@@ -80,8 +88,6 @@ void loop() {
     print_data_to_display(&decoder.data);
   }
 
-  gfx->setCursor(30, 100);
+  gfx->setCursor(100, 200);
   gfx->println(i);
-  gfx->printf("Updated: %s\n", updated ? "true" : "false");
-  gfx->printf("Ptr: %p\n", example_data_ptr);
 }
