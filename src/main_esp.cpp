@@ -1,44 +1,46 @@
-#include "SPI.h"
 #include <Arduino_GFX_Library.h>
-#include "hardware.hpp"
+#include <Arduino_GFX_Library.h>
 #include <SoftwareSerial.h>
-#include "example_data.hpp"
+#include <SPI.h>
 
-#include <Arduino_GFX_Library.h>
 #include "decoder.hpp"
+#include "example_data.hpp"
+#include "hardware.hpp"
+#include "state_machine.hpp"
 
-Arduino_DataBus* bus = new Arduino_ESP32SPI(TFT_DC, TFT_CS, TFT_SCK, TFT_MOSI, TFT_MISO, VSPI /* spi_num */);
+Arduino_DataBus *bus = new Arduino_ESP32SPI(TFT_DC, TFT_CS, TFT_SCK, TFT_MOSI, TFT_MISO, VSPI /* spi_num */);
 Arduino_GFX *gfx = new Arduino_GC9A01(bus, TFT_RST, 0 /* rotation */, true /* IPS */);
 
 // Software serial with inverted signals, no TX pin
 SoftwareSerial mySerial(RX_LELIT, -1, true);
 
-
 char *example_data_ptr = (char *)example_data;
 Decoder decoder;
 int i;
 
-void setup() {
-  Serial.begin(9600);
-  Serial.setRxInvert(true);
-  Serial.println("Hello World!");
+void setup()
+{
+    Serial.begin(9600);
+    Serial.setRxInvert(true);
+    Serial.println("Hello World!");
 
-  pinMode(RX_LELIT, INPUT);
+    pinMode(RX_LELIT, INPUT);
 
-  mySerial.begin(9600);
-  if (!mySerial) { // If the object did not initialize, then its configuration is invalid
-    Serial.println("Invalid EspSoftwareSerial pin configuration, check config");
-  }
+    mySerial.begin(9600);
+    if (!mySerial)
+    { // If the object did not initialize, then its configuration is invalid
+        Serial.println("Invalid EspSoftwareSerial pin configuration, check config");
+    }
 
-  gfx->begin();
-  gfx->fillScreen(WHITE);
-  gfx->setCursor(100, 100);
-  gfx->setTextColor(BLACK, WHITE);
-  gfx->setTextSize(2);
-  gfx->setTextWrap(false);
+    gfx->begin();
+    gfx->fillScreen(WHITE);
+    gfx->setCursor(100, 100);
+    gfx->setTextColor(BLACK, WHITE);
+    gfx->setTextSize(2);
+    gfx->setTextWrap(false);
 }
 
-void print_data_to_display(lelit_data_t *data)
+void general_data_display(lelit_data_t *data)
 {
     gfx->setCursor(0, 40);
     gfx->printf("   Mode: %6s\n", data->mode == COFFEE ? "Coffee" : "Steam");
@@ -57,37 +59,45 @@ void print_data_to_display(lelit_data_t *data)
     gfx->printf("   Pump:    %3d\n", data->pump_on);
 }
 
-void loop() {
-  // we do not have serial data yet, so iterate over example data
-  bool real_data = true;
-  bool updated = false;
-  char rc = '\0';
+void loop()
+{
+    // we do not have serial data yet, so iterate over example data
+    bool real_data = false;
+    bool updated = false;
+    char rc = '\0';
 
-  if (!real_data)
-  {
-    rc = *example_data_ptr;
-    example_data_ptr++;
-    if (*example_data_ptr == 0)
+    if (!real_data)
     {
-      example_data_ptr = (char *)example_data;
+        rc = *example_data_ptr;
+        example_data_ptr++;
+        if (*example_data_ptr == 0)
+        {
+            example_data_ptr = (char *)example_data;
+        }
     }
-  } else {
-    rc = mySerial.read();
-  }
+    else
+    {
+        rc = mySerial.read();
+    }
 
-  if (rc != 0xFF) {
-    // forward all bytes to UART for debugging & capturing
-    Serial.print(rc);
-    updated = decoder.handle_bytes(rc);
-  }
+    if (rc != 0xFF)
+    {
+        // forward all bytes to UART for debugging & capturing
+        Serial.print(rc);
+        updated = decoder.handle_bytes(rc);
+    }
 
+    if (updated)
+    {
+        i++;
+        general_data_display(&decoder.data);
+        if (!real_data)
+        {
+            // delay a bit to simulate real data
+            delay(200);
+        }
+    }
 
-  if (updated)
-  {
-    i++;
-    print_data_to_display(&decoder.data);
-  }
-
-  gfx->setCursor(100, 200);
-  gfx->println(i);
+    gfx->setCursor(100, 200);
+    gfx->println(i);
 }
