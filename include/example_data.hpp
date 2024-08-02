@@ -1,3 +1,5 @@
+#pragma once
+
 // captured example data for testing
 const char *example_data = "C1.10,115,O26,098,0000,0,0\n\
 C1.10,115,O26,098,0000,0,0\n\
