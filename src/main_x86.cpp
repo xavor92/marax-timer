@@ -3,6 +3,7 @@
 
 #include "decoder.hpp"
 #include "example_data.hpp"
+#include "state_machine.hpp"
 
 int main()
 {
@@ -13,6 +14,7 @@ int main()
     printf("Hello World from %s\n", __FILE__);
 
     Decoder decoder;
+    StateMachine state_machine;
 
     while (true)
     {
@@ -30,7 +32,8 @@ int main()
         if (updated)
         {
             i++;
-            decoder.print_current_data();
+            //decoder.print_current_data();
+            state_machine.update_state_machine(&decoder.data);
         }
     }
 
