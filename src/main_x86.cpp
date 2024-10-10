@@ -33,7 +33,11 @@ int main()
         {
             i++;
             //decoder.print_current_data();
-            state_machine.update_state_machine(&decoder.data);
+            bool state_changed = state_machine.update_state_machine(&decoder.data);
+            if (state_changed)
+            {
+                decoder.print_current_data();
+            }
         }
     }
 

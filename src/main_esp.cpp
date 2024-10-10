@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include "decoder.hpp"
+#include "display.hpp"
 #include "example_data.hpp"
 #include "hardware.hpp"
 #include "state_machine.hpp"
@@ -17,6 +18,7 @@ SoftwareSerial mySerial(RX_LELIT, -1, true);
 char *example_data_ptr = (char *)example_data;
 Decoder decoder;
 StateMachine *state_machine = NULL;
+Display *display = NULL;
 
 void setup()
 {
@@ -36,7 +38,8 @@ void setup()
     gfx->setTextColor(WHITE, BLACK);
     gfx->setTextWrap(false);
 
-    state_machine = new StateMachine(gfx);
+    state_machine = new StateMachine();
+    display = new Display(gfx);
 }
 
 void loop()
@@ -70,7 +73,7 @@ void loop()
     if (updated)
     {
         state_machine->update_state_machine(&decoder.data);
-        state_machine->draw_state(40, 40, false);
+        display->draw_state(*state_machine);
 
         if (!real_data)
         {
